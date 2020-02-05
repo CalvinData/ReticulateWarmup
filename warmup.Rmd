@@ -1,0 +1,90 @@
+---
+title: "R and Python Warmup"
+author: "Kenneth C. Arnold"
+date: "1/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+library("ggplot2")
+library("reticulate")
+```
+
+The goal of this is to run both Python and R code and share data both ways. The [reticulate](https://rstudio.github.io/reticulate/index.html) package enables this data sharing.
+
+This is a template of how such a workflow might work: wrangle in R, model in Python, visualize in R. This particular modeling task fits right in R's "sweet spot", so it would have been cleaner to do it all in R, but this lets us use more advanced Python modeling tools later.
+
+First, let's check our Python configuration. The following line asks `reticulate` what Python configurations are available.
+
+```{r}
+py_discover_config()
+```
+
+You may need to configure your Reticulate and Python installation. Please stop here and check in with the course staff. The following lines may be useful:
+
+```{r}
+#reticulate::install_miniconda()
+reticulate::use_miniconda()
+#reticulate::use_condaenv()
+```
+
+Now we can see what just got configured. Important things to look for here are the `python:` line (which Python interpreter it's using), `version` (should be 3.7 or better), and `numpy_version` (1.18 is good, others might be ok too).
+
+```{r}
+py_config()
+```
+
+Let's make sure that some Python packages we'll need are installed.
+
+TODO: on my system this keeps trying to install certifi.
+
+```{r}
+#py_install(c("scikit-learn", "pandas", "matplotlib"))
+```
+
+Let's try a simple workflow. First let's import some packages.
+
+```{python}
+import numpy as np
+import sklearn
+```
+
+Now, let's suppose we've used R to wrangle some data.
+
+```{r}
+data <- tibble(
+  x1 = seq(0, 1, length.out = 100),
+  x2 = rnorm(100),
+  y = 2 * x1 + 5 * x2 + rnorm(100))
+```
+
+Let's fit a model in Python.
+```{python}
+from sklearn.linear_model import LinearRegression
+
+# *Pull* data fram R.
+data = r.data
+
+# Fit the model. Ignore the details here.
+X = data.drop(columns=["y"])
+y = data['y']
+model = LinearRegression()
+model.fit(X, y)
+y_predicted = model.predict(X)
+```
+
+Now, plot predicted vs actual. Notice that we can access the Python `y_predicted` object.
+
+```{r}
+library(ggformula)
+library(ggplot2)
+gf_point(py$y_predicted ~ data$y)
+```
+
+Your turn:
+
+1. Make a vector `x` of 10 numbers in R.
+2. Use Python to compute the square root of each number in `x`, stored in a Python variable called `y`. (Did you use a `for` loop? If so, try to do it without writing a loop; call us over if you need help.)
+3. Use ggplot or ggformula to plot `y` vs `x`.
